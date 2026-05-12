@@ -21,3 +21,13 @@ export function padRandom(n: number): string {
   }
   return out;
 }
+
+export function channelToken(name: string): string {
+  const slug = slugify(name);
+  if (!slug) return padRandom(4);
+  const parts = slug.split('-').filter(Boolean);
+  const remaining = parts.length >= 2 ? parts.slice(1) : parts;
+  const concat = remaining.join('').slice(0, 4);
+  if (concat.length >= 4) return concat;
+  return concat + padRandom(4 - concat.length);
+}
