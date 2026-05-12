@@ -31,3 +31,37 @@ export function channelToken(name: string): string {
   if (concat.length >= 4) return concat;
   return concat + padRandom(4 - concat.length);
 }
+
+export const PARTICLES = new Set([
+  'de', 'du', 'des', 'le', 'la',
+  'van', 'von', 'der', 'den',
+  'di', 'da',
+]);
+
+export function initials(displayName: string): string {
+  const words = displayName
+    .trim()
+    .split(/\s+/)
+    .map(slugify)
+    .filter(Boolean);
+
+  if (words.length === 0) return '';
+
+  const first = words[0]!;
+
+  if (first.includes('-')) {
+    const components = first.split('-').filter(Boolean);
+    const a = components[0]?.[0] ?? '';
+    const b = components[1]?.[0] ?? a;
+    return a + b;
+  }
+
+  const a = first[0]!;
+  for (let i = 1; i < words.length; i++) {
+    const head = words[i]!.split('-')[0]!;
+    if (!PARTICLES.has(head)) {
+      return a + head[0]!;
+    }
+  }
+  return a + a;
+}

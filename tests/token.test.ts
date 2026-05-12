@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { slugify, padRandom, channelToken } from '../src/token.js';
+import { slugify, padRandom, channelToken, initials, PARTICLES } from '../src/token.js';
 
 describe('slugify', () => {
   it('lowercases', () => {
@@ -51,5 +51,39 @@ describe('channelToken', () => {
   });
   it('falls back to 4 random when slug is empty', () => {
     expect(channelToken('!!!')).toMatch(/^[a-z0-9]{4}$/);
+  });
+});
+
+describe('initials', () => {
+  it('takes 2 letters from a hyphenated first name', () => {
+    expect(initials('Marie-Claire Dubois')).toBe('mc');
+  });
+  it('skips French particles', () => {
+    expect(initials('Jean de Bonnefoy')).toBe('jb');
+  });
+  it('skips Dutch/German particles', () => {
+    expect(initials('Olga van der Berg')).toBe('ob');
+  });
+  it('handles simple Latin names', () => {
+    expect(initials('Aïcha Benali')).toBe('ab');
+    expect(initials('Kwame Mensah')).toBe('km');
+    expect(initials('Yuki Tanaka')).toBe('yt');
+    expect(initials('Diego Vázquez')).toBe('dv');
+  });
+  it('duplicates the first letter for mononyms', () => {
+    expect(initials('Yuki')).toBe('yy');
+  });
+  it('returns empty string for non-Latin scripts', () => {
+    expect(initials('田中')).toBe('');
+    expect(initials('Анна')).toBe('');
+  });
+});
+
+describe('PARTICLES', () => {
+  it('contains common European particles', () => {
+    expect(PARTICLES.has('de')).toBe(true);
+    expect(PARTICLES.has('van')).toBe(true);
+    expect(PARTICLES.has('der')).toBe(true);
+    expect(PARTICLES.has('la')).toBe(true);
   });
 });
