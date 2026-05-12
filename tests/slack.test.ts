@@ -43,6 +43,15 @@ describe('createSlackClient', () => {
     expect(web.users.info).toHaveBeenCalledTimes(1);
   });
 
+  it('re-fetches users.info after TTL expires', async () => {
+    const web = fakeWeb({ members: [], users: { U1: 'Aïcha Benali' } });
+    const client = createSlackClient(web as any);
+    await client.getUser('U1');
+    vi.advanceTimersByTime(5 * 60 * 1000 + 1);
+    await client.getUser('U1');
+    expect(web.users.info).toHaveBeenCalledTimes(2);
+  });
+
   it('prefers display_name over real_name', async () => {
     const web = {
       conversations: { members: vi.fn() },
