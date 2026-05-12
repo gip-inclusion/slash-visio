@@ -3,6 +3,7 @@ import { WebClient } from '@slack/web-api';
 import { createSlackClient } from './slack.js';
 import { makeUrl } from './slug.js';
 import { formatMessage } from './format.js';
+import { createHash } from 'node:crypto';
 
 const signingSecret = process.env.SLACK_SIGNING_SECRET;
 const botToken = process.env.SLACK_BOT_TOKEN;
@@ -20,6 +21,7 @@ const web = new WebClient(botToken);
 const slack = createSlackClient(web);
 
 app.command('/visio', async ({ command, ack, respond }) => {
+  const t0 = Date.now();
   await ack();
 
   const subject = command.text?.trim();
@@ -27,6 +29,16 @@ app.command('/visio', async ({ command, ack, respond }) => {
     channelId: command.channel_id,
     channelName: command.channel_name,
     userId: command.user_id,
+  });
+
+  const slug = url.substring(url.lastIndexOf('/') + 1);
+  const userIdHash = createHash('sha256').update(command.user_id).digest('hex').substring(0, 8);
+  console.log({
+    ts: new Date().toISOString(),
+    channel_id: command.channel_id,
+    user_id_hash: userIdHash,
+    slug,
+    latency_ms: Date.now() - t0,
   });
 
   await respond({
