@@ -1,5 +1,5 @@
 import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
-import { makeUrl, formatMessage } from './slug.js';
+import { roomUrl, formatRoomMessage } from './room.js';
 
 const SIGNING_SECRET = process.env.SLACK_SIGNING_SECRET;
 const BOT_TOKEN = process.env.SLACK_BOT_TOKEN;
@@ -40,13 +40,6 @@ function verifySignature(headers: Record<string, string | undefined>, body: stri
   return expected.length === actual.length && timingSafeEqual(expected, actual);
 }
 
-function resolveUrl(channelName: string): string {
-  if (channelName === 'directmessage' || channelName === 'group_dm' || channelName.startsWith('mpdm-')) {
-    return makeUrl({ type: 'self' });
-  }
-  return makeUrl({ type: 'channel', channelName });
-}
-
 export const handler = async (event: LambdaEvent): Promise<LambdaResult> => {
   const t0 = Date.now();
   const headers = lowercaseHeaders(event.headers);
@@ -63,7 +56,7 @@ export const handler = async (event: LambdaEvent): Promise<LambdaResult> => {
   const userId = params.get('user_id') ?? '';
   const subject = params.get('text')?.trim() ?? '';
 
-  const url = resolveUrl(channelName);
+  const url = roomUrl(channelName);
   const slug = url.substring(url.lastIndexOf('/') + 1);
   const userIdHash = createHash('sha256').update(userId).digest('hex').substring(0, 8);
   console.log({
@@ -79,7 +72,7 @@ export const handler = async (event: LambdaEvent): Promise<LambdaResult> => {
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({
       response_type: 'in_channel',
-      text: formatMessage({ url, subject }),
+      text: formatRoomMessage({ url, subject }),
     }),
   };
 };

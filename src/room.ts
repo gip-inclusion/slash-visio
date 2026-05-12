@@ -31,20 +31,24 @@ export function channelToken(name: string): string {
   return concat.length >= 4 ? concat : concat + padRandom(4 - concat.length);
 }
 
-export type SlugInput =
-  | { type: 'channel'; channelName: string }
-  | { type: 'self' };
+function isDirectMessage(channelName: string): boolean {
+  return (
+    channelName === 'directmessage' ||
+    channelName === 'group_dm' ||
+    channelName.startsWith('mpdm-')
+  );
+}
 
-export function makeSlug(input: SlugInput): string {
-  const token = input.type === 'channel' ? channelToken(input.channelName) : padRandom(4);
+export function roomSlug(channelName: string): string {
+  const token = isDirectMessage(channelName) ? padRandom(4) : channelToken(channelName);
   return `pdi-${token}-${padRandom(3)}`;
 }
 
-export function makeUrl(input: SlugInput): string {
-  return `${VISIO_BASE}/${makeSlug(input)}`;
+export function roomUrl(channelName: string): string {
+  return `${VISIO_BASE}/${roomSlug(channelName)}`;
 }
 
-export function formatMessage({ url, subject }: { url: string; subject?: string | null }): string {
+export function formatRoomMessage({ url, subject }: { url: string; subject?: string | null }): string {
   const trimmed = subject?.trim();
   return trimmed ? `*${trimmed}*\n${url}` : url;
 }

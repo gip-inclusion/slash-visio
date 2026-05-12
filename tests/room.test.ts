@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
-  slugify, padRandom, channelToken, makeSlug, makeUrl, formatMessage, VISIO_BASE,
-} from '../src/slug.js';
+  slugify, padRandom, channelToken, roomSlug, roomUrl, formatRoomMessage, VISIO_BASE,
+} from '../src/room.js';
 
 describe('slugify', () => {
   it('lowercases', () => expect(slugify('NOVA')).toBe('nova'));
@@ -35,42 +35,43 @@ describe('channelToken', () => {
   it('falls back to random when slug is empty', () => expect(channelToken('!!!')).toMatch(/^[a-z0-9]{4}$/));
 });
 
-describe('makeSlug', () => {
-  it('matches the pdi-XXXX-YYY shape', () => {
-    expect(makeSlug({ type: 'channel', channelName: 'nuage' })).toMatch(/^pdi-[a-z0-9]{4}-[a-z0-9]{3}$/);
+describe('roomSlug', () => {
+  it('matches the pdi-XXXX-YYY shape for channels', () => {
+    expect(roomSlug('nuage')).toMatch(/^pdi-[a-z0-9]{4}-[a-z0-9]{3}$/);
+    expect(roomSlug('abc-projets')).toMatch(/^pdi-proj-[a-z0-9]{3}$/);
   });
-  it('uses channelToken for channels', () => {
-    expect(makeSlug({ type: 'channel', channelName: 'abc-projets' })).toMatch(/^pdi-proj-[a-z0-9]{3}$/);
+  it('uses random token for 1↔1 DMs', () => {
+    expect(roomSlug('directmessage')).toMatch(/^pdi-[a-z0-9]{4}-[a-z0-9]{3}$/);
   });
-  it('uses random for self', () => {
-    expect(makeSlug({ type: 'self' })).toMatch(/^pdi-[a-z0-9]{4}-[a-z0-9]{3}$/);
+  it('uses random token for mpim DMs', () => {
+    expect(roomSlug('mpdm-foo-bar-baz')).toMatch(/^pdi-[a-z0-9]{4}-[a-z0-9]{3}$/);
+    expect(roomSlug('group_dm')).toMatch(/^pdi-[a-z0-9]{4}-[a-z0-9]{3}$/);
   });
-  it('generates different suffix each call', () => {
-    const a = makeSlug({ type: 'channel', channelName: 'nuage' });
-    const b = makeSlug({ type: 'channel', channelName: 'nuage' });
+  it('generates a different suffix each call', () => {
+    const a = roomSlug('nuage');
+    const b = roomSlug('nuage');
     expect(a).not.toBe(b);
   });
 });
 
-describe('makeUrl', () => {
+describe('roomUrl', () => {
   it('prepends the visio base', () => {
-    const u = makeUrl({ type: 'channel', channelName: 'nuage' });
-    expect(u.startsWith(`${VISIO_BASE}/pdi-`)).toBe(true);
+    expect(roomUrl('nuage').startsWith(`${VISIO_BASE}/pdi-`)).toBe(true);
   });
 });
 
-describe('formatMessage', () => {
+describe('formatRoomMessage', () => {
   it('returns URL alone without subject', () => {
-    expect(formatMessage({ url: 'https://x/y' })).toBe('https://x/y');
+    expect(formatRoomMessage({ url: 'https://x/y' })).toBe('https://x/y');
   });
   it('treats empty/whitespace as no subject', () => {
-    expect(formatMessage({ url: 'https://x/y', subject: '' })).toBe('https://x/y');
-    expect(formatMessage({ url: 'https://x/y', subject: '   ' })).toBe('https://x/y');
+    expect(formatRoomMessage({ url: 'https://x/y', subject: '' })).toBe('https://x/y');
+    expect(formatRoomMessage({ url: 'https://x/y', subject: '   ' })).toBe('https://x/y');
   });
   it('bolds the subject above the URL', () => {
-    expect(formatMessage({ url: 'https://x/y', subject: 'Rétro' })).toBe('*Rétro*\nhttps://x/y');
+    expect(formatRoomMessage({ url: 'https://x/y', subject: 'Rétro' })).toBe('*Rétro*\nhttps://x/y');
   });
   it('trims the subject', () => {
-    expect(formatMessage({ url: 'https://x/y', subject: '  Hello  ' })).toBe('*Hello*\nhttps://x/y');
+    expect(formatRoomMessage({ url: 'https://x/y', subject: '  Hello  ' })).toBe('*Hello*\nhttps://x/y');
   });
 });
