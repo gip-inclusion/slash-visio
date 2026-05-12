@@ -1,21 +1,50 @@
-import { channelToken, padRandom } from './token.js';
+import { randomBytes } from 'node:crypto';
+
+export const VISIO_BASE = 'https://visio.numerique.gouv.fr';
+
+export function slugify(s: string): string {
+  return s
+    .normalize('NFKD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9-]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
+const ALPHABET = 'abcdefghijklmnopqrstuvwxyz0123456789';
+
+export function padRandom(n: number): string {
+  if (n <= 0) return '';
+  const buf = randomBytes(n);
+  let out = '';
+  for (let i = 0; i < n; i++) out += ALPHABET[buf[i]! % ALPHABET.length];
+  return out;
+}
+
+export function channelToken(name: string): string {
+  const slug = slugify(name);
+  if (!slug) return padRandom(4);
+  const parts = slug.split('-').filter(Boolean);
+  const remaining = parts.length >= 2 ? parts.slice(1) : parts;
+  const concat = remaining.join('').slice(0, 4);
+  return concat.length >= 4 ? concat : concat + padRandom(4 - concat.length);
+}
 
 export type SlugInput =
   | { type: 'channel'; channelName: string }
   | { type: 'self' };
 
-export const VISIO_BASE = 'https://visio.numerique.gouv.fr';
-
 export function makeSlug(input: SlugInput): string {
-  const token = (() => {
-    switch (input.type) {
-      case 'channel': return channelToken(input.channelName);
-      case 'self': return padRandom(4);
-    }
-  })();
+  const token = input.type === 'channel' ? channelToken(input.channelName) : padRandom(4);
   return `pdi-${token}-${padRandom(3)}`;
 }
 
 export function makeUrl(input: SlugInput): string {
   return `${VISIO_BASE}/${makeSlug(input)}`;
+}
+
+export function formatMessage({ url, subject }: { url: string; subject?: string | null }): string {
+  const trimmed = subject?.trim();
+  return trimmed ? `*${trimmed}*\n${url}` : url;
 }
