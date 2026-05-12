@@ -60,37 +60,48 @@ async function resolveUrl({
   //   1↔1 DM:          "directmessage"
   //   group DM:        "mpdm-…" or "group_dm"
   //   private channel: actual name
-  if (channelName === 'directmessage') {
-    const members = await slack.getMembers(channelId);
-    const others = members.filter((m) => m !== userId);
-    if (others.length === 0) return makeUrl({ type: 'self' });
-    if (others.length === 1) {
-      const [inviter, other] = await Promise.all([
+  try {
+    if (channelName === 'directmessage') {
+      const members = await slack.getMembers(channelId);
+      const others = members.filter((m) => m !== userId);
+      if (others.length === 0) return makeUrl({ type: 'self' });
+      if (others.length === 1) {
+        const [inviter, other] = await Promise.all([
+          slack.getUser(userId),
+          slack.getUser(others[0]!),
+        ]);
+        return makeUrl({
+          type: 'dm',
+          inviter: { name: inviter.name, userId: inviter.id },
+          other: { name: other.name, userId: other.id },
+        });
+      }
+      // group DM with channel_name "directmessage" — fall through to mpim
+    }
+
+    if (channelName.startsWith('mpdm-') || channelName === 'group_dm' || channelName === 'directmessage') {
+      const members = await slack.getMembers(channelId);
+      const others = members.filter((m) => m !== userId);
+      const [inviter, ...rest] = await Promise.all([
         slack.getUser(userId),
-        slack.getUser(others[0]!),
+        ...others.map((id) => slack.getUser(id)),
       ]);
       return makeUrl({
-        type: 'dm',
-        inviter: { name: inviter.name, userId: inviter.id },
-        other: { name: other.name, userId: other.id },
+        type: 'mpim',
+        inviter: { name: inviter!.name, userId: inviter!.id },
+        others: rest.map((u) => ({ name: u.name, userId: u.id })),
       });
     }
-    // group DM with channel_name "directmessage" — fall through to mpim
-  }
 
-  if (channelName.startsWith('mpdm-') || channelName === 'group_dm' || channelName === 'directmessage') {
-    const members = await slack.getMembers(channelId);
-    const others = members.filter((m) => m !== userId);
-    const [inviter, ...rest] = await Promise.all([
-      slack.getUser(userId),
-      ...others.map((id) => slack.getUser(id)),
-    ]);
-    return makeUrl({
-      type: 'mpim',
-      inviter: { name: inviter!.name, userId: inviter!.id },
-      others: rest.map((u) => ({ name: u.name, userId: u.id })),
+    return makeUrl({ type: 'channel', channelName });
+  } catch (err) {
+    console.log({
+      ts: new Date().toISOString(),
+      channel_id: channelId,
+      channel_name: channelName,
+      fallback: 'self',
+      error: err instanceof Error ? err.message : String(err),
     });
+    return makeUrl({ type: 'self' });
   }
-
-  return makeUrl({ type: 'channel', channelName });
 }
