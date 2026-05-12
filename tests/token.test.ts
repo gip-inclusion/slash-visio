@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { slugify, padRandom, channelToken, initials, PARTICLES } from '../src/token.js';
+import { slugify, padRandom, channelToken, initials, PARTICLES, dmToken, fallbackInitials } from '../src/token.js';
 
 describe('slugify', () => {
   it('lowercases', () => {
@@ -85,5 +85,46 @@ describe('PARTICLES', () => {
     expect(PARTICLES.has('van')).toBe(true);
     expect(PARTICLES.has('der')).toBe(true);
     expect(PARTICLES.has('la')).toBe(true);
+  });
+});
+
+describe('dmToken', () => {
+  it('places the inviter first', () => {
+    expect(dmToken(
+      { name: 'Aïcha Benali', userId: 'U1' },
+      { name: 'Yuki Tanaka', userId: 'U2' },
+    )).toBe('abyt');
+  });
+  it('handles particles', () => {
+    expect(dmToken(
+      { name: 'Olga van der Berg', userId: 'U1' },
+      { name: 'Diego Vázquez', userId: 'U2' },
+    )).toBe('obdv');
+  });
+  it('handles hyphenated first names', () => {
+    expect(dmToken(
+      { name: 'Marie-Claire Dubois', userId: 'U1' },
+      { name: 'Henri Renard', userId: 'U2' },
+    )).toBe('mchr');
+  });
+  it('falls back to user_id hash when name is non-Latin', () => {
+    const t = dmToken(
+      { name: '田中', userId: 'UABC' },
+      { name: 'Yuki Tanaka', userId: 'U2' },
+    );
+    expect(t).toMatch(/^[a-f0-9]{2}yt$/);
+    expect(t).toBe(dmToken(
+      { name: '田中', userId: 'UABC' },
+      { name: 'Yuki Tanaka', userId: 'U2' },
+    ));
+  });
+});
+
+describe('fallbackInitials', () => {
+  it('is deterministic for the same user_id', () => {
+    expect(fallbackInitials('UABC')).toBe(fallbackInitials('UABC'));
+  });
+  it('returns exactly 2 hex chars', () => {
+    expect(fallbackInitials('UABC')).toMatch(/^[a-f0-9]{2}$/);
   });
 });

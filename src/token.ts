@@ -1,4 +1,4 @@
-import { randomBytes } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
 
 export function slugify(s: string): string {
   return s
@@ -64,4 +64,18 @@ export function initials(displayName: string): string {
     }
   }
   return a + a;
+}
+
+export type Person = { name: string; userId: string };
+
+export function fallbackInitials(userId: string): string {
+  return createHash('sha256').update(userId).digest('hex').slice(0, 2);
+}
+
+function personInitials(p: Person): string {
+  return initials(p.name) || fallbackInitials(p.userId);
+}
+
+export function dmToken(inviter: Person, other: Person): string {
+  return (personInitials(inviter) + personInitials(other)).slice(0, 4);
 }
