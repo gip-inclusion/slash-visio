@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { slugify, padRandom, channelToken, initials, PARTICLES, dmToken, fallbackInitials } from '../src/token.js';
+import { slugify, padRandom, channelToken, initials, PARTICLES, dmToken, fallbackInitials, mpimToken, selfDmToken } from '../src/token.js';
 
 describe('slugify', () => {
   it('lowercases', () => {
@@ -126,5 +126,46 @@ describe('fallbackInitials', () => {
   });
   it('returns exactly 2 hex chars', () => {
     expect(fallbackInitials('UABC')).toMatch(/^[a-f0-9]{2}$/);
+  });
+});
+
+describe('mpimToken', () => {
+  it('places inviter first then others alphabetical', () => {
+    const t = mpimToken(
+      { name: 'Kwame Mensah', userId: 'U1' },
+      [
+        { name: 'Aïcha Benali', userId: 'U2' },
+        { name: 'Yuki Tanaka', userId: 'U3' },
+      ],
+    );
+    expect(t).toMatch(/^kay[a-z0-9]$/);
+  });
+  it('returns 4 chars without padding when 4 people', () => {
+    expect(mpimToken(
+      { name: 'Marie-Claire Dubois', userId: 'U1' },
+      [
+        { name: 'Aïcha Benali', userId: 'U2' },
+        { name: 'Kwame Mensah', userId: 'U3' },
+        { name: 'Yuki Tanaka', userId: 'U4' },
+      ],
+    )).toBe('maky');
+  });
+  it('truncates to 4 chars for 5+ people', () => {
+    const t = mpimToken(
+      { name: 'Henri Renard', userId: 'U1' },
+      [
+        { name: 'Anna Lemaire', userId: 'U2' },
+        { name: 'Léa Garnier', userId: 'U3' },
+        { name: 'Sophie Vidal', userId: 'U4' },
+        { name: 'Zoé Martin', userId: 'U5' },
+      ],
+    );
+    expect(t).toBe('hals');
+  });
+});
+
+describe('selfDmToken', () => {
+  it('returns 4 random chars', () => {
+    expect(selfDmToken()).toMatch(/^[a-z0-9]{4}$/);
   });
 });

@@ -79,3 +79,21 @@ function personInitials(p: Person): string {
 export function dmToken(inviter: Person, other: Person): string {
   return (personInitials(inviter) + personInitials(other)).slice(0, 4);
 }
+
+function firstInitial(p: Person): string {
+  const ini = initials(p.name);
+  if (ini) return ini[0]!;
+  return fallbackInitials(p.userId)[0]!;
+}
+
+export function mpimToken(inviter: Person, others: Person[]): string {
+  const sorted = [...others].sort((a, b) => a.name.localeCompare(b.name));
+  const letters = firstInitial(inviter) + sorted.map(firstInitial).join('');
+  const trimmed = letters.slice(0, 4);
+  if (trimmed.length >= 4) return trimmed;
+  return trimmed + padRandom(4 - trimmed.length);
+}
+
+export function selfDmToken(): string {
+  return padRandom(4);
+}
