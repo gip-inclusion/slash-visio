@@ -1,6 +1,7 @@
 import { randomBytes } from 'node:crypto';
 
 export const VISIO_BASE = 'https://visio.numerique.gouv.fr';
+export const ROOM_PREFIX = 'pdi';
 
 export function slugify(s: string): string {
   return s
@@ -41,7 +42,7 @@ function isDirectMessage(channelName: string): boolean {
 
 export function roomSlug(channelName: string): string {
   const token = isDirectMessage(channelName) ? padRandom(4) : channelToken(channelName);
-  return `pdi-${token}-${padRandom(3)}`;
+  return `${ROOM_PREFIX}-${token}-${padRandom(3)}`;
 }
 
 export function roomUrl(channelName: string): string {
