@@ -20,9 +20,8 @@ export const app = new App({
 const web = new WebClient(botToken);
 const slack = createSlackClient(web);
 
-app.command('/visio', async ({ command, ack, respond }) => {
+app.command('/visio', async ({ command, ack }) => {
   const t0 = Date.now();
-  await ack();
 
   const subject = command.text?.trim();
   const url = await resolveUrl({
@@ -41,7 +40,7 @@ app.command('/visio', async ({ command, ack, respond }) => {
     latency_ms: Date.now() - t0,
   });
 
-  await respond({
+  await ack({
     response_type: 'in_channel',
     text: formatMessage({ url, subject }),
   });
