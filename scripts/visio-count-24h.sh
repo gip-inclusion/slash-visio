@@ -5,8 +5,9 @@ set -euo pipefail
 #
 # Reads logs from the Scaleway Cockpit Loki endpoint. Requires:
 #   - scw CLI authenticated to the right project
-#   - SCW_COCKPIT_LOG_TOKEN: a Cockpit token with read_only_logs scope
-#       (create with: scw cockpit token create name=visio-stats token-scopes.0=read_only_logs)
+#   - SCW_COCKPIT_LOG_TOKEN in .env (or env) — a Cockpit token with
+#       read_only_logs scope. Create with:
+#       scw cockpit token create name=visio-stats token-scopes.0=read_only_logs
 #   - jq + curl
 #
 # Flags:
@@ -25,7 +26,16 @@ for arg in "$@"; do
   esac
 done
 
-: "${SCW_COCKPIT_LOG_TOKEN:?Set SCW_COCKPIT_LOG_TOKEN — create one with: scw cockpit token create name=visio-stats token-scopes.0=read_only_logs}"
+# Load .env from the project root (one level up from this script) if present.
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+if [[ -f "$ROOT/.env" ]]; then
+  set -a
+  # shellcheck disable=SC1091
+  source "$ROOT/.env"
+  set +a
+fi
+
+: "${SCW_COCKPIT_LOG_TOKEN:?Set SCW_COCKPIT_LOG_TOKEN in .env — create one with: scw cockpit token create name=visio-stats token-scopes.0=read_only_logs}"
 
 FUNCTION_NAME="${FUNCTION_NAME:-slash-visio}"
 

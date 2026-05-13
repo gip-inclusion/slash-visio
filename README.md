@@ -53,16 +53,14 @@ One-time setup:
 
 ```sh
 scw cockpit token create name=visio-stats token-scopes.0=read_only_logs
-# copy the returned secret_key into your env as SCW_COCKPIT_LOG_TOKEN
-# (the secret is shown once — save it)
+# Drop the returned secret_key into .env as SCW_COCKPIT_LOG_TOKEN=… (shown once).
 ```
 
 Then:
 
 ```sh
-SCW_COCKPIT_LOG_TOKEN=… ./scripts/visio-count-24h.sh
-# 42 /visio calls in the last 24h
-# ···▁▂▁·▃▅▂▁·▄▂·▁··▂▁····
+./scripts/visio-count-24h.sh           # count + sparkline
+./scripts/visio-count-24h.sh -v        # also list each room (time + slug)
 ```
 
 ## Layout
