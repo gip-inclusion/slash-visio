@@ -45,6 +45,26 @@ scw function function deploy <function-id>
 
 After deploy, paste the assigned `https://<id>.functions.fnc.fr-par.scw.cloud/` URL as the Slack app's slash command Request URL.
 
+## Usage stats
+
+`scripts/visio-count-24h.sh` prints how many `/visio` invocations happened in the last 24h, with an hourly sparkline. It pulls from Scaleway Cockpit logs (Loki).
+
+One-time setup:
+
+```sh
+scw cockpit token create name=visio-stats token-scopes.0=read_only_logs
+# copy the returned secret_key into your env as SCW_COCKPIT_LOG_TOKEN
+# (the secret is shown once — save it)
+```
+
+Then:
+
+```sh
+SCW_COCKPIT_LOG_TOKEN=… ./scripts/visio-count-24h.sh
+# 42 /visio calls in the last 24h
+# ···▁▂▁·▃▅▂▁·▄▂·▁··▂▁····
+```
+
 ## Layout
 
 ```
