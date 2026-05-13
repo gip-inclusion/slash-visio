@@ -59,13 +59,13 @@ export const handler = async (event: LambdaEvent): Promise<LambdaResult> => {
   const url = roomUrl(channelName);
   const slug = url.substring(url.lastIndexOf('/') + 1);
   const userIdHash = createHash('sha256').update(userId).digest('hex').substring(0, 8);
-  console.log({
+  console.log(JSON.stringify({
     ts: new Date().toISOString(),
     channel_id: channelId,
     user_id_hash: userIdHash,
     slug,
     latency_ms: Date.now() - t0,
-  });
+  }));
 
   return {
     statusCode: 200,
