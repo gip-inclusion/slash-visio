@@ -69,7 +69,6 @@ export const handler = async (event: LambdaEvent): Promise<LambdaResult> => {
 
   return {
     statusCode: 200,
-    headers: { 'content-type': 'application/json' },
     body: JSON.stringify({
       response_type: 'in_channel',
       text: formatRoomMessage({ url, subject }),
