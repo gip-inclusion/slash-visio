@@ -29,8 +29,8 @@ scw function function create \
   namespace-id=<NS_ID> \
   runtime=node20 \
   handler=handler.handler \
-  memory-limit=256 \
-  min-scale=0 \
+  memory-limit=128 \
+  min-scale=1 \
   max-scale=5 \
   privacy=public \
   http-option=enabled \
