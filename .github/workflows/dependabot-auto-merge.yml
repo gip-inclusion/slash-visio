@@ -1,7 +1,9 @@
 name: Dependabot auto-merge
 
-# Queue patch and minor Dependabot PRs for auto-merge. GitHub merges them once
-# the required `ci` check on main is green; major bumps are left for a human.
+# Queue Dependabot PRs for auto-merge: GitHub merges them once the required
+# `ci` check on main is green. Major bumps are left for a human, except in the
+# npm-security group when no direct dependency in package.json changes major
+# (e.g. a transitive fix that only ships in a new major of that package).
 on: pull_request
 
 permissions:
@@ -15,8 +17,33 @@ jobs:
     steps:
       - id: meta
         uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3.1.0
-      - if: steps.meta.outputs.update-type != 'version-update:semver-major'
-        run: gh pr merge --auto --squash "$PR_URL"
+      - name: Enable auto-merge
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          UPDATE_TYPE: ${{ steps.meta.outputs.update-type }}
+          GROUP: ${{ steps.meta.outputs.dependency-group }}
+        run: |
+          if [ "$UPDATE_TYPE" = "version-update:semver-major" ]; then
+            if [ "$GROUP" != "npm-security" ]; then
+              echo "Major update outside npm-security: left for review."
+              exit 0
+            fi
+            pkg() { gh api "repos/$REPO/contents/package.json?ref=$1" --jq .content | base64 -d; }
+            # Direct dependencies whose major changes (an unparsable range counts as a change).
+            direct_majors=$(jq -nc --argjson base "$(pkg "$BASE_SHA")" --argjson head "$(pkg "$HEAD_SHA")" '
+              def major: (capture("(?<m>[0-9]+)").m) // "?";
+              def deps: (.dependencies // {}) + (.devDependencies // {});
+              ($base | deps) as $old
+              | [ $head | deps | to_entries[]
+                  | select($old[.key] != null and ($old[.key] | major) != (.value | major))
+                  | .key ]')
+            if [ "$direct_majors" != "[]" ]; then
+              echo "Direct dependency major bump $direct_majors: left for review."
+              exit 0
+            fi
+          fi
+          gh pr merge --auto --squash "$PR_URL"
